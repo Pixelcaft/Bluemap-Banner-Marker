@@ -19,6 +19,8 @@ group = mod_group_id
 
 repositories {
     mavenLocal()
+    maven { url 'https://repo.spongepowered.org/maven/' }
+    maven { url 'https://repo.bluecolored.de/releases' }
 }
 
 base {
@@ -113,6 +115,7 @@ configurations {
 }
 
 dependencies {
+    implementation 'de.bluecolored:bluemap-api:2.7.4'
     // Example optional mod dependency with JEI
     // The JEI API is declared for compile time use, while the full JEI artifact is used at runtime
     // compileOnly "mezz.jei:jei-${mc_version}-common-api:${jei_version}"

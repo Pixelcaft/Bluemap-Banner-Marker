@@ -103,8 +103,28 @@ public class BannerMarkerManager {
         var x = blockPos.getX() + 0.5;
         var y = blockPos.getY() + 0.5;
         var z = blockPos.getZ() + 0.5;
-        String iconAddress = blueMapMap.getAssetStorage().getAssetUrl(bannerBlockEntity.getBaseColor().getName() + ".png");
-        POIMarker bannerMarker = POIMarker.builder().label(blockName).position(x, y, z).icon(iconAddress, 0, 0).build();
+
+        // Bepaal de naam en het pad van het icoon
+        var iconName = bannerBlockEntity.getBaseColor().getName().toLowerCase() + ".png";
+        var iconAddress = blueMapMap.getAssetStorage().getAssetUrl(iconName);
+
+        // Controleer of het icoonadres geldig is
+        if (iconAddress == null) {
+            LOGGER.warn("Icon address is null for icon: {}", iconName);
+            return;
+        }
+
+        // Log informatie over de marker
+        LOGGER.info("Adding marker with icon {} at position ({}, {}, {})", iconAddress, x, y, z);
+
+        // Maak de POIMarker aan
+        POIMarker bannerMarker = POIMarker.builder()
+                .label(blockName)
+                .position(x, y, z)
+                .icon(iconAddress, 32, 32)
+                .build();
+
+        // Voeg de marker toe aan de MarkerSet
         existingBannerMarkerSet.put(blockPos.toShortString(), bannerMarker);
     }
 }

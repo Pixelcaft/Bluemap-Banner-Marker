@@ -12,17 +12,22 @@ public class BannerMapIcons {
     private static final Logger LOGGER = LoggerFactory.getLogger("BannerMapIcons");
 
     public void loadMapIcons(BlueMapAPI blueMapAPI) {
+       LOGGER.info("Executing loadMapIcons method");
         blueMapAPI.getMaps().forEach(blueMapMap -> {
             var assetStorage = blueMapMap.getAssetStorage();
             for (var dyeColor : DyeColor.values()) {
-                var iconName = dyeColor.getName().toLowerCase() + ".png"; // Use `getName()` for NeoForge
+                var iconName = dyeColor.getName().toLowerCase() + ".png";
+                var resourcePath = "/assets/bmbannermarker/icons/banners/" + iconName;
+                LOGGER.info("Loading icon {} from resource path {}", iconName, resourcePath);
                 try {
                     if (!assetStorage.assetExists(iconName)) {
                         try (var outStream = assetStorage.writeAsset(iconName);
-                             var stream = BmBannerMarker.class.getResourceAsStream("/assets/bmbannermarker/icons/banners/" + iconName)) {
+                             var stream = BmBannerMarker.class.getResourceAsStream(resourcePath)) {
                             if (stream != null) {
-                                LOGGER.trace("Writing icon {} to map {}", iconName, blueMapMap);
+                                LOGGER.warn("Writing icon {} to map {}", iconName, blueMapMap);
                                 outStream.write(stream.readAllBytes());
+                            } else {
+                                LOGGER.warn("Icon resource not found: {}", resourcePath);
                             }
                         }
                     }

@@ -9,10 +9,13 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.BannerBlock;
+import net.minecraft.world.level.block.entity.BannerBlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
+import net.neoforged.neoforge.event.level.BlockEvent;
 import net.neoforged.neoforge.event.server.ServerStartingEvent;
 import net.neoforged.neoforge.event.server.ServerStoppingEvent;
 import org.slf4j.Logger;
@@ -50,27 +53,53 @@ public class CommonEventHandler {
     }
 
     @SubscribeEvent
-    public void onPlayerInteract(PlayerInteractEvent.RightClickBlock event) {
-        if (event.getEntity() instanceof ServerPlayer player) {
-            Level world = player.getCommandSenderWorld();
-            BlockPos pos = event.getPos();
-            InteractionHand hand = event.getHand();
+    public void onBlockPlace(BlockEvent.EntityPlaceEvent event) {
+        // Alleen server-side
+        if (event.getLevel().isClientSide()) return;
 
-            if (!world.dimension().equals(Level.OVERWORLD) || player.isSpectator()) return;
+        // Alleen als een speler het doet
+        if (!(event.getEntity() instanceof ServerPlayer player)) return;
 
-            if (player.getItemInHand(hand).is(Items.FILLED_MAP)) {
-                BlockState blockState = world.getBlockState(pos);
-                BlockEntity blockEntity = world.getBlockEntity(pos);
+        // Alleen als het om een banner gaat
+        if (!(event.getPlacedBlock().getBlock() instanceof BannerBlock)) return;
 
-                if (blockState.is(BlockTags.BANNERS)) {
-                    LOGGER.trace("Toggling marker at {}", pos);
-                    bannerMarkerManager.toggleMarker(blockState, blockEntity);
-                    event.setCancellationResult(InteractionResult.SUCCESS);
-                    event.setCanceled(true);
-                }
+        BlockPos pos = event.getPos();
+        BlockState blockState = event.getPlacedBlock();
+        BlockEntity blockEntity = event.getLevel().getBlockEntity(pos);
+
+        if (blockEntity instanceof BannerBlockEntity bannerBlockEntity) {
+            if (bannerBlockEntity.getCustomName() != null && bannerBlockEntity.getCustomName().getString().startsWith("#")) {
+                // De naam begint met een #
+                LOGGER.trace("Toggling marker at {}", pos);
+                bannerMarkerManager.toggleMarker(blockState, blockEntity);
+//                event.setCanceled(true); // Alleen annuleren indien nodig
             }
         }
     }
+
+
+//    @SubscribeEvent
+//    public void onPlayerInteract(PlayerInteractEvent.RightClickBlock event) {
+//        if (event.getEntity() instanceof ServerPlayer player) {
+//            Level world = player.getCommandSenderWorld();
+//            BlockPos pos = event.getPos();
+//            InteractionHand hand = event.getHand();
+//
+//            if (!world.dimension().equals(Level.OVERWORLD) || player.isSpectator()) return;
+//
+//            if (player.getItemInHand(hand).is(Items.FILLED_MAP)) {
+//                BlockState blockState = world.getBlockState(pos);
+//                BlockEntity blockEntity = world.getBlockEntity(pos);
+//
+//                if (blockState.is(BlockTags.BANNERS)) {
+//                    LOGGER.trace("Toggling marker at {}", pos);
+//                    bannerMarkerManager.toggleMarker(blockState, blockEntity);
+//                    event.setCancellationResult(InteractionResult.SUCCESS);
+//                    event.setCanceled(true);
+//                }
+//            }
+//        }
+//    }
 
     @SubscribeEvent
     public void onBlockBreak(PlayerInteractEvent.LeftClickBlock event) {

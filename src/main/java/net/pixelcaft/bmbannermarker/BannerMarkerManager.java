@@ -7,9 +7,7 @@ import de.bluecolored.bluemap.api.markers.MarkerSet;
 import de.bluecolored.bluemap.api.markers.POIMarker;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.world.level.block.BannerBlock;
 import net.minecraft.world.level.block.entity.BannerBlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
@@ -28,6 +26,17 @@ public class BannerMarkerManager {
     private final String markerJsonFileName = "marker-file.json";
     private final String markerSetLabel = "Map Banners";
     private final String bannerMarkerSetId = "overworldmapbanners";
+    private final Config config;
+
+    public BannerMarkerManager(Config config) {
+        this.config = config;
+    }
+
+    // Add this method to expose the Config instance
+    public Config getConfig() {
+        return config;
+    }
+
 
     public void loadMarkers(ServerLevel overworld) {
         MarkerSet bannerMarkerSet = getMarkerSet();
@@ -104,24 +113,23 @@ public class BannerMarkerManager {
         var y = blockPos.getY() + 0.5;
         var z = blockPos.getZ() + 0.5;
 
-        // Bepaal de naam en het pad van het icoon
-        var iconName = bannerBlockEntity.getBaseColor().getName().toLowerCase() + ".png";
-        var iconAddress = blueMapMap.getAssetStorage().getAssetUrl(iconName);
+        // Extract markerType by removing the '#' prefix and ignoring additional text
+        String markerType = blockName.startsWith("#") ? blockName.split(" ")[0].substring(1) : "default";
 
-        // Controleer of het icoonadres geldig is
+        // Retrieve the correct icon file
+        String color = bannerBlockEntity.getBaseColor().getName().toLowerCase();
+        File iconFile = config.getIconFile(markerType, color);
+        var iconAddress = blueMapMap.getAssetStorage().getAssetUrl(iconFile.getName());
+
         if (iconAddress == null) {
-            LOGGER.warn("Icon address is null for icon: {}", iconName);
+            LOGGER.warn("Icon address is null for marker type: {} and color: {}", markerType, color);
             return;
         }
 
-        // Log informatie over de marker
         LOGGER.info("Adding marker with icon {} at position ({}, {}, {})", iconAddress, x, y, z);
 
-        var iconLabel = blockName.startsWith("#") && blockName.contains(" ")
-                ? blockName.substring(blockName.indexOf(" ") + 1)
-                : blockName;
+        var iconLabel = markerType; // Use only the extracted markerType as the label
 
-        // Maak de POIMarker aan
         POIMarker bannerMarker = POIMarker.builder()
                 .label(iconLabel)
                 .position(x, y, z)
@@ -129,7 +137,6 @@ public class BannerMarkerManager {
                 .maxDistance(1000)
                 .build();
 
-        // Voeg de marker toe aan de MarkerSet
         existingBannerMarkerSet.put(blockPos.toShortString(), bannerMarker);
         saveMarkers();
     }

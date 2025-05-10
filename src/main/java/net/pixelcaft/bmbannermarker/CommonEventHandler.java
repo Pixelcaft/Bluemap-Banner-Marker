@@ -42,6 +42,10 @@ public class CommonEventHandler {
                 bannerMapIcons.loadMapIcons(blueMapAPI);
             });
         }
+
+        // Registreer de BmCommand
+        var dispatcher = event.getServer().getCommands().getDispatcher();
+        new BmCommand(bannerMarkerManager.getConfig()).register(dispatcher);
     }
 
     @SubscribeEvent

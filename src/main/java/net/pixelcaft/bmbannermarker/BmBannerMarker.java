@@ -10,8 +10,10 @@ public class BmBannerMarker {
     public static final String MODID = "pixelcaftsbmbannermarker";
 
     public BmBannerMarker(IEventBus modEventBus) {
-        BannerMarkerManager bannerMarkerManager = new BannerMarkerManager();
-        BannerMapIcons bannerMapIcons = new BannerMapIcons();
+        Config config = new Config();
+        config.loadConfig();
+        BannerMarkerManager bannerMarkerManager = new BannerMarkerManager(config);
+        BannerMapIcons bannerMapIcons = new BannerMapIcons(config);
 
         // Mod lifecycle events
         modEventBus.register(new ModEventHandler());

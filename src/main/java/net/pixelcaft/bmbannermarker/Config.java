@@ -1,63 +1,93 @@
 package net.pixelcaft.bmbannermarker;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.*;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
 
-import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.item.Item;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.fml.event.config.ModConfigEvent;
-import net.neoforged.neoforge.common.ModConfigSpec;
+public class Config {
 
-// An example config class. This is not required, but it's a good idea to have one to keep your config organized.
-// Demonstrates how to use Neo's config APIs
-@EventBusSubscriber(modid = BmBannerMarker.MODID, bus = EventBusSubscriber.Bus.MOD)
-public class Config
-{
-    private static final ModConfigSpec.Builder BUILDER = new ModConfigSpec.Builder();
+    private static final Logger LOGGER = LoggerFactory.getLogger(Config.class);
+    private static final String CONFIG_PATH = "config/bmbm.toml";
+    private static final String ASSETS_DIR = "bluemap/web/maps/world/assets";
+    private List<String> markerTypes = new ArrayList<>();
 
-    private static final ModConfigSpec.BooleanValue LOG_DIRT_BLOCK = BUILDER
-            .comment("Whether to log the dirt block on common setup")
-            .define("logDirtBlock", true);
+    public void loadConfig() {
+        File configFile = new File(CONFIG_PATH);
 
-    private static final ModConfigSpec.IntValue MAGIC_NUMBER = BUILDER
-            .comment("A magic number")
-            .defineInRange("magicNumber", 42, 0, Integer.MAX_VALUE);
+        // Ensure the config file exists
+        if (!configFile.exists()) {
+            createDefaultConfig(configFile);
+        }
 
-    public static final ModConfigSpec.ConfigValue<String> MAGIC_NUMBER_INTRODUCTION = BUILDER
-            .comment("What you want the introduction message to be for the magic number")
-            .define("magicNumberIntroduction", "The magic number is... ");
-
-    // a list of strings that are treated as resource locations for items
-    private static final ModConfigSpec.ConfigValue<List<? extends String>> ITEM_STRINGS = BUILDER
-            .comment("A list of items to log on common setup.")
-            .defineListAllowEmpty("items", List.of("minecraft:iron_ingot"), Config::validateItemName);
-
-    static final ModConfigSpec SPEC = BUILDER.build();
-
-    public static boolean logDirtBlock;
-    public static int magicNumber;
-    public static String magicNumberIntroduction;
-    public static Set<Item> items;
-
-    private static boolean validateItemName(final Object obj)
-    {
-        return obj instanceof String itemName && BuiltInRegistries.ITEM.containsKey(ResourceLocation.parse(itemName));
+        // Load marker types from the config file
+        markerTypes = new ArrayList<>();
+        try (BufferedReader reader = new BufferedReader(new FileReader(configFile))) {
+            String line;
+            boolean inMarkerTypesSection = false;
+            while ((line = reader.readLine()) != null) {
+                line = line.trim();
+                if (line.startsWith("[markerTypes]")) {
+                    inMarkerTypesSection = true;
+                } else if (line.startsWith("[") && inMarkerTypesSection) {
+                    break; // Exit the section
+                } else if (inMarkerTypesSection && !line.isEmpty() && !line.startsWith("#")) {
+                    markerTypes.add(line);
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
-    @SubscribeEvent
-    static void onLoad(final ModConfigEvent event)
-    {
-        logDirtBlock = LOG_DIRT_BLOCK.get();
-        magicNumber = MAGIC_NUMBER.get();
-        magicNumberIntroduction = MAGIC_NUMBER_INTRODUCTION.get();
+    private void createDefaultConfig(File configFile) {
+        try {
+            // Create the configuration file
+            configFile.createNewFile();
+            try (var writer = new FileWriter(configFile)) {
+                writer.write("""
+                    # bmbm Configuration File
+                    # To create a custom icon for a marker type, place a PNG file in the assets directory with the name <markerType>-<color>.png
+                    # Example: For a marker type "marker" and color "red", place a file named "marker-red.png" in the assets directory.
+                    # The default icon for each color will be used if a specific icon is not found.
+                    # The icon foler can be found bluemap\\web\\maps\\world
+                    # Your need to place each copy in the correct world folder world, world_nether, world_the_end
+                    # The default icons are using the size 64x64 pixels
+                    
+                    
+                    # Add your marker types here
+                    [markerTypes]
+                    marker
+                    # Define marker types here
+                    # Colors will be handled dynamically
+                    """);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 
-        // convert the list of strings into a set of items
-        items = ITEM_STRINGS.get().stream()
-                .map(itemName -> BuiltInRegistries.ITEM.get(ResourceLocation.parse(itemName)))
-                .collect(Collectors.toSet());
+    public List<String> getMarkerTypes() {
+        return markerTypes;
+    }
+
+    public File getIconFile(String markerType, String color) {
+        if (markerType.startsWith("#")) {
+            markerType = markerType.substring(1);
+        }
+
+        String specificIconName = markerType + "-" + color + ".png";
+        File specificIconFile = new File(ASSETS_DIR, specificIconName);
+
+        if (specificIconFile.exists()) {
+            return specificIconFile;
+        }
+
+        LOGGER.warn("Specific icon {} not found, falling back to default icon {}", specificIconName, color + ".png");
+
+        String defaultIconName = color + ".png";
+        return new File(ASSETS_DIR, defaultIconName);
     }
 }

@@ -117,14 +117,20 @@ public class BannerMarkerManager {
         // Log informatie over de marker
         LOGGER.info("Adding marker with icon {} at position ({}, {}, {})", iconAddress, x, y, z);
 
+        var iconLabel = blockName.startsWith("#") && blockName.contains(" ")
+                ? blockName.substring(blockName.indexOf(" ") + 1)
+                : blockName;
+
         // Maak de POIMarker aan
         POIMarker bannerMarker = POIMarker.builder()
-                .label(blockName)
+                .label(iconLabel)
                 .position(x, y, z)
                 .icon(iconAddress, 32, 32)
+                .maxDistance(1000)
                 .build();
 
         // Voeg de marker toe aan de MarkerSet
         existingBannerMarkerSet.put(blockPos.toShortString(), bannerMarker);
+        saveMarkers();
     }
 }

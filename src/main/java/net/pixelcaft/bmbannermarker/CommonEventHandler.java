@@ -34,14 +34,16 @@ public class CommonEventHandler {
 
     @SubscribeEvent
     public void onServerStarting(ServerStartingEvent event) {
-        ServerLevel overworld = event.getServer().overworld();
-        if (overworld != null) {
-            BlueMapAPI.onEnable(blueMapAPI -> {
-                LOGGER.info("Starting BmBannerMarker");
-                bannerMarkerManager.loadMarkers(overworld);
-                bannerMapIcons.loadMapIcons(blueMapAPI);
+        LOGGER.info("Starting BmBannerMarker");
+
+        BlueMapAPI.onEnable(blueMapAPI -> {
+            event.getServer().getAllLevels().forEach(serverLevel -> {
+                LOGGER.info("Loading markers for dimension: {}", serverLevel.dimension().location());
+                bannerMarkerManager.loadMarkers(serverLevel);
             });
-        }
+
+            bannerMapIcons.loadMapIcons(blueMapAPI);
+        });
 
         // Registreer de BmCommand
         var dispatcher = event.getServer().getCommands().getDispatcher();
@@ -73,37 +75,19 @@ public class CommonEventHandler {
 
         if (blockEntity instanceof BannerBlockEntity bannerBlockEntity) {
             if (bannerBlockEntity.getCustomName() != null && bannerBlockEntity.getCustomName().getString().startsWith("#")) {
-                // De naam begint met een #
-                LOGGER.trace("Toggling marker at {}", pos);
-                bannerMarkerManager.toggleMarker(blockState, blockEntity);
-//                event.setCanceled(true); // Alleen annuleren indien nodig
+                // Haal alleen het eerste woord na de #
+                String markerType = bannerBlockEntity.getCustomName().getString().substring(1).split(" ")[0];
+                if (bannerMarkerManager.getConfig().getMarkerTypes().contains(markerType)) {
+                    // Marker type is geldig
+                    LOGGER.trace("Toggling marker at {}", pos);
+                    bannerMarkerManager.toggleMarker(blockState, blockEntity);
+                } else {
+                    // Ongeldig marker type
+                    LOGGER.warn("Invalid marker type '{}' at {}", markerType, pos);
+                }
             }
         }
     }
-
-
-//    @SubscribeEvent
-//    public void onPlayerInteract(PlayerInteractEvent.RightClickBlock event) {
-//        if (event.getEntity() instanceof ServerPlayer player) {
-//            Level world = player.getCommandSenderWorld();
-//            BlockPos pos = event.getPos();
-//            InteractionHand hand = event.getHand();
-//
-//            if (!world.dimension().equals(Level.OVERWORLD) || player.isSpectator()) return;
-//
-//            if (player.getItemInHand(hand).is(Items.FILLED_MAP)) {
-//                BlockState blockState = world.getBlockState(pos);
-//                BlockEntity blockEntity = world.getBlockEntity(pos);
-//
-//                if (blockState.is(BlockTags.BANNERS)) {
-//                    LOGGER.trace("Toggling marker at {}", pos);
-//                    bannerMarkerManager.toggleMarker(blockState, blockEntity);
-//                    event.setCancellationResult(InteractionResult.SUCCESS);
-//                    event.setCanceled(true);
-//                }
-//            }
-//        }
-//    }
 
     @SubscribeEvent
     public void onBlockBreak(PlayerInteractEvent.LeftClickBlock event) {
@@ -111,13 +95,33 @@ public class CommonEventHandler {
             Level world = player.getCommandSenderWorld();
             BlockPos pos = event.getPos();
 
-            if (world.dimension().equals(Level.OVERWORLD)) {
-                BlockState state = world.getBlockState(pos);
-                if (state.is(BlockTags.BANNERS)) {
-                    BlockEntity blockEntity = world.getBlockEntity(pos);
-                    bannerMarkerManager.removeMarker(blockEntity);
+            BlockState state = world.getBlockState(pos);
+            if (state.is(BlockTags.BANNERS)) {
+                BlockEntity blockEntity = world.getBlockEntity(pos);
+
+                if (blockEntity instanceof BannerBlockEntity bannerBlockEntity) {
+                    if (bannerBlockEntity.getCustomName() != null && bannerBlockEntity.getCustomName().getString().startsWith("#")) {
+                        // Verwijder de marker zonder validatie
+                        bannerMarkerManager.removeMarker(blockEntity);
+                    }
                 }
             }
         }
     }
+
+//    @SubscribeEvent
+//    public void onBlockBreak(PlayerInteractEvent.LeftClickBlock event) {
+//        if (event.getEntity() instanceof ServerPlayer player) {
+//            Level world = player.getCommandSenderWorld();
+//            BlockPos pos = event.getPos();
+//
+//            if (world.dimension().equals(Level.OVERWORLD)) {
+//                BlockState state = world.getBlockState(pos);
+//                if (state.is(BlockTags.BANNERS)) {
+//                    BlockEntity blockEntity = world.getBlockEntity(pos);
+//                    bannerMarkerManager.removeMarker(blockEntity);
+//                }
+//            }
+//        }
+//    }
 }

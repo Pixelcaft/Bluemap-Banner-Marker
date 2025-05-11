@@ -37,20 +37,39 @@ public class BannerMarkerManager {
         return config;
     }
 
+    private void ensureFolderExists(File folder) {
+        if (!folder.exists() && !folder.mkdirs()) {
+            LOGGER.error("Failed to create folder: {}", folder.getAbsolutePath());
+        }
+    }
+
+    private void ensureFileExists(File file) {
+        if (!file.exists()) {
+            try {
+                if (file.createNewFile()) {
+                    LOGGER.info("Created new file: {}", file.getAbsolutePath());
+                }
+            } catch (IOException e) {
+                LOGGER.error("Failed to create file: {}", file.getAbsolutePath(), e);
+            }
+        }
+    }
+
 
     public void loadMarkers(ServerLevel serverLevel) {
         BlueMapAPI.getInstance()
                 .flatMap(blueMapAPI -> blueMapAPI.getWorld(serverLevel))
                 .ifPresent(blueMapWorld -> blueMapWorld.getMaps().forEach(blueMapMap -> {
                     String dimensionId = blueMapWorld.getId(); // Get dimension ID
-                    File markerFile = new File(markerJsonFileName.replace(".json", "_" + dimensionId + ".json")); // Dimension-specific file
+                    String safeDimensionId = dimensionId.replace(":", "_"); // Sanitize dimensionId for filenames
+                    File markerFile = new File("config/bmbm/bmbm-" + safeDimensionId + ".json"); // Dimension-specific file
                     MarkerSet markerSet;
 
                     if (markerFile.exists()) {
                         try (FileReader reader = new FileReader(markerFile)) {
                             markerSet = MarkerGson.INSTANCE.fromJson(reader, MarkerSet.class);
                         } catch (IOException ex) {
-                            LOGGER.error("Failed to read marker file for dimension {}", dimensionId, ex);
+                            LOGGER.error("Failed to read marker file for dimension {}", safeDimensionId, ex);
                             return;
                         }
                     } else {
@@ -61,17 +80,24 @@ public class BannerMarkerManager {
                                 .build();
                     }
 
-                    blueMapMap.getMarkerSets().put(bannerMarkerSetId + "_" + dimensionId, markerSet);
+                    blueMapMap.getMarkerSets().put(bannerMarkerSetId + "_" + safeDimensionId, markerSet);
                 }));
     }
 
     public void saveMarkers() {
+        File folder = new File("config/bmbm");
+        ensureFolderExists(folder);
+
         BlueMapAPI.getInstance().ifPresent(blueMapAPI -> blueMapAPI.getMaps().forEach(blueMapMap -> blueMapMap.getMarkerSets().forEach((id, markerSet) -> {
-            if (id != null && id.startsWith(bannerMarkerSetId)) { // Controleer op prefix
-                String dimensionId = id.replace(bannerMarkerSetId + "_", ""); // Haal dimensie-ID uit de MarkerSet-ID
-                File markerFile = new File(markerJsonFileName.replace(".json", "_" + dimensionId + ".json")); // Unieke bestandsnaam per dimensie
+            if (id != null && id.startsWith(bannerMarkerSetId)) {
+                String safeDimensionId = id.replace(bannerMarkerSetId + "_", "");
+                File markerFile = new File(folder, "bmbm-" + safeDimensionId + ".json");
+
+                ensureFileExists(markerFile);
+
                 try (FileWriter writer = new FileWriter(markerFile)) {
                     MarkerGson.INSTANCE.toJson(markerSet, writer);
+                    LOGGER.info("Saved markers for dimension {} to {}", safeDimensionId, markerFile.getAbsolutePath());
                 } catch (IOException e) {
                     LOGGER.error("Failed to save marker file for {}", id, e);
                 }
@@ -83,10 +109,10 @@ public class BannerMarkerManager {
         BlueMapAPI.getInstance().ifPresent(blueMapAPI -> {
             blueMapAPI.getWorlds().forEach(blueMapWorld -> {
                 String dimensionId = blueMapWorld.getId();
-                String dimensionMarkerSetId = bannerMarkerSetId + "_" + dimensionId;
+                String safeDimensionId = dimensionId.replace(":", "_"); // Sanitize dimensionId
 
                 blueMapWorld.getMaps().forEach(blueMapMap -> {
-                    var markerSet = blueMapMap.getMarkerSets().get(dimensionMarkerSetId);
+                    var markerSet = blueMapMap.getMarkerSets().get(bannerMarkerSetId + "_" + safeDimensionId);
                     if (markerSet != null) {
                         markerSet.remove(pos.toShortString());
                     }
@@ -94,7 +120,7 @@ public class BannerMarkerManager {
             });
         });
 
-        // Sla de markers op na het verwijderen
+        // Save markers after removal
         saveMarkers();
     }
 
@@ -102,14 +128,15 @@ public class BannerMarkerManager {
         if (!(blockEntity instanceof BannerBlockEntity bannerBlockEntity)) {
             return;
         }
+
         BlueMapAPI.getInstance()
                 .flatMap(blueMapAPI -> blueMapAPI.getWorld(blockEntity.getLevel()))
                 .ifPresent(blueMapWorld -> {
                     String dimensionId = blueMapWorld.getId(); // Dynamically retrieve dimension ID
-                    String dimensionMarkerSetId = bannerMarkerSetId + "_" + dimensionId; // Unique MarkerSet ID per dimension
+                    String safeDimensionId = dimensionId.replace(":", "_"); // Sanitize dimensionId
 
                     blueMapWorld.getMaps().forEach(blueMapMap -> {
-                        var existingBannerMarkerSet = blueMapMap.getMarkerSets().computeIfAbsent(dimensionMarkerSetId, id ->
+                        var existingBannerMarkerSet = blueMapMap.getMarkerSets().computeIfAbsent(bannerMarkerSetId + "_" + safeDimensionId, id ->
                                 MarkerSet.builder().label(markerSetLabel + " (" + dimensionId + ")").defaultHidden(false).toggleable(true).build()
                         );
 
@@ -136,18 +163,18 @@ public class BannerMarkerManager {
         var y = blockPos.getY() + 0.5;
         var z = blockPos.getZ() + 0.5;
 
-        // Verwijder de `#` en het eerste woord, gebruik de rest als label
+        // Remove the `#` and first word, use the rest as label
         String markerLabel = blockName.startsWith("#") ? blockName.substring(1).trim() : blockName;
         int firstSpaceIndex = markerLabel.indexOf(" ");
         if (firstSpaceIndex != -1) {
             markerLabel = markerLabel.substring(firstSpaceIndex + 1).trim();
         } else {
-            markerLabel = "default"; // Fallback als er geen extra tekst is
+            markerLabel = "default"; // Fallback if there's no extra text
         }
 
         // Retrieve the correct icon file
         String color = bannerBlockEntity.getBaseColor().getName().toLowerCase();
-        File iconFile = config.getIconFile(blockName.split(" ")[0].substring(1), color); // Gebruik het eerste woord voor het icoon
+        File iconFile = config.getIconFile(blockName.split(" ")[0].substring(1), color); // Use first word for icon
         var iconAddress = blueMapMap.getAssetStorage().getAssetUrl(iconFile.getName());
 
         if (iconAddress == null) {
@@ -158,7 +185,7 @@ public class BannerMarkerManager {
         LOGGER.info("Adding marker with icon {} at position ({}, {}, {})", iconAddress, x, y, z);
 
         POIMarker bannerMarker = POIMarker.builder()
-                .label(markerLabel) // Gebruik de aangepaste markerLabel
+                .label(markerLabel) // Use the custom markerLabel
                 .position(x, y, z)
                 .icon(iconAddress, 32, 32)
                 .maxDistance(1000)

@@ -49,38 +49,48 @@ public class CommonEventHandler {
     public void onServerStopping(ServerStoppingEvent event) {
         BlueMapAPI.onDisable(blueMapAPI -> {
             LOGGER.info("Stopping BmBannerMarker");
-            bannerMarkerManager.saveMarkers();
+            blueMapAPI.getWorlds().forEach(blueMapWorld -> {
+                String dimensionId = blueMapWorld.getId(); // Retrieve the dimension ID
+                bannerMarkerManager.saveMarkers(dimensionId); // Save markers for each dimension
+            });
         });
     }
-
     @SubscribeEvent
     public void onBlockPlace(BlockEvent.EntityPlaceEvent event) {
-        // Alleen server-side
         if (event.getLevel().isClientSide()) return;
 
-        // Controleer of de entiteit een speler is
         if (!(event.getEntity() instanceof ServerPlayer player)) return;
 
-        // Alleen als het om een banner gaat
-        if (!(event.getPlacedBlock().getBlock() instanceof BannerBlock)) return;
+        BlockState blockState = event.getPlacedBlock();
+        LOGGER.debug("Block placed: {}", blockState.getBlock().getDescriptionId());
+
+        // Check if the block is part of the BANNERS tag
+        if (!blockState.is(BlockTags.BANNERS)) {
+            LOGGER.debug("Block is not a BannerBlock or WallBannerBlock.");
+            return;
+        }
 
         BlockPos pos = event.getPos();
-        BlockState blockState = event.getPlacedBlock();
         BlockEntity blockEntity = event.getLevel().getBlockEntity(pos);
 
         if (blockEntity instanceof BannerBlockEntity bannerBlockEntity) {
+            LOGGER.debug("BannerBlockEntity found at position: {}", pos);
+
             if (bannerBlockEntity.getCustomName() != null && bannerBlockEntity.getCustomName().getString().startsWith("#")) {
-                // Haal alleen het eerste woord na de #
                 String markerType = bannerBlockEntity.getCustomName().getString().substring(1).split(" ")[0];
+                LOGGER.debug("Marker type: {}", markerType);
+
                 if (bannerMarkerManager.getConfig().getMarkerTypes().contains(markerType)) {
-                    // Marker type is geldig
-                    LOGGER.trace("Player {} placed a valid marker at {}", player.getName().getString(), pos);
+                    LOGGER.trace("Valid marker type. Toggling marker.");
                     bannerMarkerManager.toggleMarker(blockState, blockEntity);
                 } else {
-                    // Ongeldig marker type
-                    LOGGER.warn("Player {} placed an invalid marker type '{}' at {}", player.getName().getString(), markerType, pos);
+                    LOGGER.warn("Invalid marker type: {}", markerType);
                 }
+            } else {
+                LOGGER.debug("Banner does not have a valid custom name.");
             }
+        } else {
+            LOGGER.debug("No BannerBlockEntity found at position: {}", pos);
         }
     }
 

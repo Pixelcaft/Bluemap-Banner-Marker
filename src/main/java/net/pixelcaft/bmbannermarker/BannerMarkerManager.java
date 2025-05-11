@@ -39,37 +39,31 @@ public class BannerMarkerManager {
 
 
     public void loadMarkers(ServerLevel serverLevel) {
-        BlueMapAPI.getInstance().ifPresent(blueMapAPI -> blueMapAPI.getWorld(serverLevel).ifPresent(blueMapWorld -> {
-            String dimensionId = blueMapWorld.getId(); // Haal dimensie-ID op
-            File markerFile = new File(markerJsonFileName.replace(".json", "_" + dimensionId + ".json")); // Bestandsnaam per dimensie
-            MarkerSet markerSet;
-            if (markerFile.exists()) {
-                try (FileReader reader = new FileReader(markerFile)) {
-                    markerSet = MarkerGson.INSTANCE.fromJson(reader, MarkerSet.class);
-                } catch (IOException ex) {
-                    LOGGER.error("Failed to read marker file for dimension {}", dimensionId, ex);
-                    return;
-                }
-            } else {
-                markerSet = MarkerSet.builder().label(markerSetLabel + " (" + dimensionId + ")").defaultHidden(false).toggleable(true).build();
-            }
-            blueMapWorld.getMaps().forEach(blueMapMap -> blueMapMap.getMarkerSets().put(bannerMarkerSetId + "_" + dimensionId, markerSet));
-        }));
-    }
+        BlueMapAPI.getInstance()
+                .flatMap(blueMapAPI -> blueMapAPI.getWorld(serverLevel))
+                .ifPresent(blueMapWorld -> blueMapWorld.getMaps().forEach(blueMapMap -> {
+                    String dimensionId = blueMapWorld.getId(); // Get dimension ID
+                    File markerFile = new File(markerJsonFileName.replace(".json", "_" + dimensionId + ".json")); // Dimension-specific file
+                    MarkerSet markerSet;
 
-//    private MarkerSet getMarkerSet() {
-//        File markerFile = new File(markerJsonFileName);
-//        if (markerFile.exists()) {
-//            try (FileReader reader = new FileReader(markerJsonFileName)) {
-//                return MarkerGson.INSTANCE.fromJson(reader, MarkerSet.class);
-//            } catch (IOException ex) {
-//                LOGGER.error("Failed to read marker file", ex);
-//            }
-//        } else {
-//            return MarkerSet.builder().label(markerSetLabel).defaultHidden(false).toggleable(true).build();
-//        }
-//        return null;
-//    }
+                    if (markerFile.exists()) {
+                        try (FileReader reader = new FileReader(markerFile)) {
+                            markerSet = MarkerGson.INSTANCE.fromJson(reader, MarkerSet.class);
+                        } catch (IOException ex) {
+                            LOGGER.error("Failed to read marker file for dimension {}", dimensionId, ex);
+                            return;
+                        }
+                    } else {
+                        markerSet = MarkerSet.builder()
+                                .label(markerSetLabel + " (" + dimensionId + ")")
+                                .defaultHidden(false)
+                                .toggleable(true)
+                                .build();
+                    }
+
+                    blueMapMap.getMarkerSets().put(bannerMarkerSetId + "_" + dimensionId, markerSet);
+                }));
+    }
 
     public void saveMarkers() {
         BlueMapAPI.getInstance().ifPresent(blueMapAPI -> blueMapAPI.getMaps().forEach(blueMapMap -> blueMapMap.getMarkerSets().forEach((id, markerSet) -> {
@@ -85,35 +79,52 @@ public class BannerMarkerManager {
         })));
     }
 
-    public void removeMarker(BlockEntity blockEntity) {
-        toggleMarker(null, blockEntity);
+    public void removeMarker(BlockPos pos) {
+        BlueMapAPI.getInstance().ifPresent(blueMapAPI -> {
+            blueMapAPI.getWorlds().forEach(blueMapWorld -> {
+                String dimensionId = blueMapWorld.getId();
+                String dimensionMarkerSetId = bannerMarkerSetId + "_" + dimensionId;
+
+                blueMapWorld.getMaps().forEach(blueMapMap -> {
+                    var markerSet = blueMapMap.getMarkerSets().get(dimensionMarkerSetId);
+                    if (markerSet != null) {
+                        markerSet.remove(pos.toShortString());
+                    }
+                });
+            });
+        });
+
+        // Sla de markers op na het verwijderen
+        saveMarkers();
     }
 
     public void toggleMarker(BlockState blockState, BlockEntity blockEntity) {
         if (!(blockEntity instanceof BannerBlockEntity bannerBlockEntity)) {
             return;
         }
-        BlueMapAPI.getInstance().flatMap(blueMapAPI -> blueMapAPI.getWorld((ServerLevel) blockEntity.getLevel())).ifPresent(blueMapWorld -> {
-            String dimensionId = blueMapWorld.getId(); // Dynamisch dimensie-ID ophalen
-            String dimensionMarkerSetId = bannerMarkerSetId + "_" + dimensionId; // Unieke MarkerSet-ID per dimensie
+        BlueMapAPI.getInstance()
+                .flatMap(blueMapAPI -> blueMapAPI.getWorld(blockEntity.getLevel()))
+                .ifPresent(blueMapWorld -> {
+                    String dimensionId = blueMapWorld.getId(); // Dynamically retrieve dimension ID
+                    String dimensionMarkerSetId = bannerMarkerSetId + "_" + dimensionId; // Unique MarkerSet ID per dimension
 
-            blueMapWorld.getMaps().forEach(blueMapMap -> {
-                var existingBannerMarkerSet = blueMapMap.getMarkerSets().computeIfAbsent(dimensionMarkerSetId, id ->
-                        MarkerSet.builder().label(markerSetLabel + " (" + dimensionId + ")").defaultHidden(false).toggleable(true).build()
-                );
+                    blueMapWorld.getMaps().forEach(blueMapMap -> {
+                        var existingBannerMarkerSet = blueMapMap.getMarkerSets().computeIfAbsent(dimensionMarkerSetId, id ->
+                                MarkerSet.builder().label(markerSetLabel + " (" + dimensionId + ")").defaultHidden(false).toggleable(true).build()
+                        );
 
-                var markerId = blockEntity.getBlockPos().toShortString();
-                var existingMarker = existingBannerMarkerSet.getMarkers().get(markerId);
-                if (existingMarker != null) {
-                    existingBannerMarkerSet.remove(markerId);
-                } else if (blockState != null) {
-                    String name = bannerBlockEntity.getCustomName() != null
-                            ? bannerBlockEntity.getCustomName().getString()
-                            : Component.translatable(blockState.getBlock().getDescriptionId()).getString();
-                    addMarker(name, bannerBlockEntity, existingBannerMarkerSet, blueMapMap);
-                }
-            });
-        });
+                        var markerId = blockEntity.getBlockPos().toShortString();
+                        var existingMarker = existingBannerMarkerSet.getMarkers().get(markerId);
+                        if (existingMarker != null) {
+                            existingBannerMarkerSet.remove(markerId);
+                        } else if (blockState != null) {
+                            String name = bannerBlockEntity.getCustomName() != null
+                                    ? bannerBlockEntity.getCustomName().getString()
+                                    : Component.translatable(blockState.getBlock().getDescriptionId()).getString();
+                            addMarker(name, bannerBlockEntity, existingBannerMarkerSet, blueMapMap);
+                        }
+                    });
+                });
 
         // Save markers immediately after toggling
         saveMarkers();

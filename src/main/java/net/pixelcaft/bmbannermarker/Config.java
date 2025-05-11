@@ -38,34 +38,37 @@ public class Config {
                 }
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            LOGGER.error("Failed to load configuration file: {}", configFile.getAbsolutePath(), e);
         }
     }
 
     private void createDefaultConfig(File configFile) {
         try {
             // Create the configuration file
-            configFile.createNewFile();
-            try (var writer = new FileWriter(configFile)) {
-                writer.write("""
-                    # bmbm Configuration File
-                    # To create a custom icon for a marker type, place a PNG file in the assets directory with the name <markerType>-<color>.png
-                    # Example: For a marker type "marker" and color "red", place a file named "marker-red.png" in the assets directory.
-                    # The default icon for each color will be used if a specific icon is not found.
-                    # The icon foler can be found bluemap\\web\\maps\\world
-                    # Your need to place each copy in the correct world folder world, world_nether, world_the_end
-                    # The default icons are using the size 64x64 pixels
-                    
-                    
-                    # Add your marker types here
-                    [markerTypes]
-                    marker
-                    # Define marker types here
-                    # Colors will be handled dynamically
-                    """);
+            if (configFile.createNewFile()) {
+                try (var writer = new FileWriter(configFile)) {
+                    writer.write("""
+                # bmbm Configuration File
+                # To create a custom icon for a marker type, place a PNG file in the assets directory with the name <markerType>-<color>.png
+                # Example: For a marker type "marker" and color "red", place a file named "marker-red.png" in the assets directory.
+                # The default icon for each color will be used if a specific icon is not found.
+                # The icon foler can be found bluemap\\web\\maps\\world
+                # Your need to place each copy in the correct world folder world, world_nether, world_the_end
+                # The default icons are using the size 64x64 pixels
+
+
+                # Add your marker types here
+                [markerTypes]
+                marker
+                # Define marker types here
+                # Colors will be handled dynamically
+                """);
+                }
+            } else {
+                LOGGER.warn("Configuration file already exists: {}", configFile.getAbsolutePath());
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            LOGGER.error("Failed to create configuration file: {}", configFile.getAbsolutePath(), e);
         }
     }
 

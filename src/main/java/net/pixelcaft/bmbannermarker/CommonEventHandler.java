@@ -2,19 +2,14 @@ package net.pixelcaft.bmbannermarker;
 
 import de.bluecolored.bluemap.api.BlueMapAPI;
 import net.minecraft.core.BlockPos;
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.BlockTags;
-import net.minecraft.world.InteractionHand;
-import net.minecraft.world.InteractionResult;
-import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.BannerBlock;
 import net.minecraft.world.level.block.entity.BannerBlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
 import net.neoforged.neoforge.event.level.BlockEvent;
 import net.neoforged.neoforge.event.server.ServerStartingEvent;
 import net.neoforged.neoforge.event.server.ServerStoppingEvent;
@@ -47,7 +42,7 @@ public class CommonEventHandler {
 
         // Registreer de BmCommand
         var dispatcher = event.getServer().getCommands().getDispatcher();
-        new BmCommand(bannerMarkerManager.getConfig()).register(dispatcher);
+        new BmCommand(bannerMarkerManager.getConfig(), bannerMarkerManager).register(dispatcher);
     }
 
     @SubscribeEvent
@@ -63,7 +58,7 @@ public class CommonEventHandler {
         // Alleen server-side
         if (event.getLevel().isClientSide()) return;
 
-        // Alleen als een speler het doet
+        // Controleer of de entiteit een speler is
         if (!(event.getEntity() instanceof ServerPlayer player)) return;
 
         // Alleen als het om een banner gaat
@@ -79,49 +74,32 @@ public class CommonEventHandler {
                 String markerType = bannerBlockEntity.getCustomName().getString().substring(1).split(" ")[0];
                 if (bannerMarkerManager.getConfig().getMarkerTypes().contains(markerType)) {
                     // Marker type is geldig
-                    LOGGER.trace("Toggling marker at {}", pos);
+                    LOGGER.trace("Player {} placed a valid marker at {}", player.getName().getString(), pos);
                     bannerMarkerManager.toggleMarker(blockState, blockEntity);
                 } else {
                     // Ongeldig marker type
-                    LOGGER.warn("Invalid marker type '{}' at {}", markerType, pos);
+                    LOGGER.warn("Player {} placed an invalid marker type '{}' at {}", player.getName().getString(), markerType, pos);
                 }
             }
         }
     }
 
     @SubscribeEvent
-    public void onBlockBreak(PlayerInteractEvent.LeftClickBlock event) {
-        if (event.getEntity() instanceof ServerPlayer player) {
-            Level world = player.getCommandSenderWorld();
-            BlockPos pos = event.getPos();
+    public void onBlockBreak(BlockEvent.BreakEvent event) {
+        if (!(event.getLevel() instanceof Level world)) return; // Ensure the level is of type Level
 
-            BlockState state = world.getBlockState(pos);
-            if (state.is(BlockTags.BANNERS)) {
-                BlockEntity blockEntity = world.getBlockEntity(pos);
+        BlockPos pos = event.getPos();
+        BlockState state = world.getBlockState(pos);
 
-                if (blockEntity instanceof BannerBlockEntity bannerBlockEntity) {
-                    if (bannerBlockEntity.getCustomName() != null && bannerBlockEntity.getCustomName().getString().startsWith("#")) {
-                        // Verwijder de marker zonder validatie
-                        bannerMarkerManager.removeMarker(blockEntity);
-                    }
+        if (state.is(BlockTags.BANNERS)) {
+            BlockEntity blockEntity = world.getBlockEntity(pos);
+
+            if (blockEntity instanceof BannerBlockEntity bannerBlockEntity) {
+                if (bannerBlockEntity.getCustomName() != null && bannerBlockEntity.getCustomName().getString().startsWith("#")) {
+                    // Remove the marker without validation
+                    bannerMarkerManager.removeMarker(blockEntity.getBlockPos());
                 }
             }
         }
     }
-
-//    @SubscribeEvent
-//    public void onBlockBreak(PlayerInteractEvent.LeftClickBlock event) {
-//        if (event.getEntity() instanceof ServerPlayer player) {
-//            Level world = player.getCommandSenderWorld();
-//            BlockPos pos = event.getPos();
-//
-//            if (world.dimension().equals(Level.OVERWORLD)) {
-//                BlockState state = world.getBlockState(pos);
-//                if (state.is(BlockTags.BANNERS)) {
-//                    BlockEntity blockEntity = world.getBlockEntity(pos);
-//                    bannerMarkerManager.removeMarker(blockEntity);
-//                }
-//            }
-//        }
-//    }
 }

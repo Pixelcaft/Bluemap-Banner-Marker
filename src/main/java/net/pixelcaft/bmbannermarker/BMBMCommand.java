@@ -82,7 +82,7 @@ public class BMBMCommand {
 
     private int showInfo(CommandContext<CommandSourceStack> context) {
         var source = context.getSource();
-        source.sendSuccess(() -> Component.literal("To create a marker, place a banner and name it starting with '#' followed by the marker type."), false);
+        source.sendSuccess(() -> Component.literal("To create a marker, place a banner and name it starting with '#' followed by the marker type see /bmbm markertypes."), false);
         source.sendSuccess(() -> Component.literal("Example: Name the banner '#markerType' to create a marker of type 'markerType'."), false);
         return 1; // Command executed successfully
     }

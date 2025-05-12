@@ -176,7 +176,7 @@ public class BMBannerMarkerManager {
         if (firstSpaceIndex != -1) {
             markerLabel = markerLabel.substring(firstSpaceIndex + 1).trim();
         } else {
-            markerLabel = "default"; // Fallback if there's no extra text
+            markerLabel = "Marker"; // Fallback if there's no extra text
         }
 
         // Retrieve the correct icon file

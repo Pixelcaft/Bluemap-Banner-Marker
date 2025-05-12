@@ -20,22 +20,22 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 
-public class BannerMarkerManager {
+public class BMBannerMarkerManager {
 
     private static final Logger LOGGER = LoggerFactory.getLogger("BannerMarkerManager");
 
     private final String markerJsonFileName = "marker-file.json";
     private final String markerSetLabel = "Map Banners";
-    private final String bannerMarkerSetId = "overworldmapbanners";
-    private final Config config;
+    private final String bannerMarkerSetId = "mapbannermarkerset";
+    private final BMBMConfig BMBMConfig;
 
-    public BannerMarkerManager(Config config) {
-        this.config = config;
+    public BMBannerMarkerManager(BMBMConfig BMBMConfig) {
+        this.BMBMConfig = BMBMConfig;
     }
 
     // Add this method to expose the Config instance
-    public Config getConfig() {
-        return config;
+    public BMBMConfig getConfig() {
+        return BMBMConfig;
     }
 
     private void ensureFolderExists(File folder) {
@@ -181,7 +181,7 @@ public class BannerMarkerManager {
 
         // Retrieve the correct icon file
         String color = bannerBlockEntity.getBaseColor().getName().toLowerCase();
-        File iconFile = config.getIconFile(blockName.split(" ")[0].substring(1), color); // Use first word for icon
+        File iconFile = BMBMConfig.getIconFile(blockName.split(" ")[0].substring(1), color); // Use first word for icon
         if (!iconFile.exists()) {
             LOGGER.warn("Icon file does not exist for marker label: {} and color: {}", markerLabel, color);
             return;

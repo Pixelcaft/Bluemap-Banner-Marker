@@ -9,14 +9,14 @@ import net.minecraft.commands.Commands;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 
-public class BmCommand {
+public class BMBMCommand {
 
-    private final Config config;
-    private final BannerMarkerManager bannerMarkerManager;
+    private final BMBMConfig BMBMConfig;
+    private final BMBannerMarkerManager BMBannerMarkerManager;
 
-    public BmCommand(Config config, BannerMarkerManager bannerMarkerManager) {
-        this.config = config;
-        this.bannerMarkerManager = bannerMarkerManager;
+    public BMBMCommand(BMBMConfig BMBMConfig, BMBannerMarkerManager BMBannerMarkerManager) {
+        this.BMBMConfig = BMBMConfig;
+        this.BMBannerMarkerManager = BMBannerMarkerManager;
     }
 
     public void register(CommandDispatcher<CommandSourceStack> dispatcher) {
@@ -27,9 +27,6 @@ public class BmCommand {
                 )
                 .then(Commands.literal("info")
                         .executes(this::showInfo)
-                )
-                .then(Commands.literal("reload")
-                        .executes(this::reloadConfigAndIcons)
                 )
         );
 
@@ -44,6 +41,9 @@ public class BmCommand {
                                 )
                         )
                 )
+                .then(Commands.literal("reload")
+                        .executes(this::reloadConfigAndIcons)
+                )
         );
     }
 
@@ -56,7 +56,7 @@ public class BmCommand {
         BlockPos pos = new BlockPos(x, y, z);
 
         // Remove the marker directly without checking for a banner
-        bannerMarkerManager.removeMarker(pos);
+        BMBannerMarkerManager.removeMarker(pos);
         source.sendSuccess(() -> Component.literal("Marker at " + pos + " removed successfully."), false);
 
         return 1; // Command executed
@@ -65,13 +65,13 @@ public class BmCommand {
     private int reloadConfigAndIcons(CommandContext<CommandSourceStack> context) {
         var source = context.getSource();
         try {
-            config.loadConfig(); // Reload the configuration
+            BMBMConfig.loadConfig(); // Reload the configuration
             source.sendSuccess(() -> Component.literal("Configuration reloaded successfully."), false);
 
             // Reload the icons
             BlueMapAPI.getInstance().ifPresent(api -> {
-                BannerMapIcons bannerMapIcons = new BannerMapIcons(config);
-                bannerMapIcons.loadMapIcons(api);
+                BMBannerMapIcons BMBannerMapIcons = new BMBannerMapIcons(BMBMConfig);
+                BMBannerMapIcons.loadMapIcons(api);
             });
             source.sendSuccess(() -> Component.literal("Icons reloaded successfully."), false);
         } catch (Exception e) {
@@ -89,7 +89,7 @@ public class BmCommand {
 
     private int showMarkerTypes(CommandContext<CommandSourceStack> context) {
         var source = context.getSource();
-        var markerTypes = config.getMarkerTypes();
+        var markerTypes = BMBMConfig.getMarkerTypes();
 
         if (markerTypes.isEmpty()) {
             source.sendSuccess(() -> Component.literal("No marker types found in the config."), false);

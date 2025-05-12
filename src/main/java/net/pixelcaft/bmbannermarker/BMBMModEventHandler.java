@@ -5,7 +5,7 @@ import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class ModEventHandler {
+public class BMBMModEventHandler {
 
     private static final Logger LOGGER = LoggerFactory.getLogger("pixelcaftsbmbannermarker");
 

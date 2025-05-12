@@ -7,9 +7,9 @@ import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Config {
+public class BMBMConfig {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(Config.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(BMBMConfig.class);
     private static final String CONFIG_PATH = "config/bmbm.toml";
     private static final String ASSETS_DIR = "bluemap/web/maps/world/assets";
     private List<String> markerTypes = new ArrayList<>();

@@ -5,7 +5,6 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.BannerBlock;
 import net.minecraft.world.level.block.entity.BannerBlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
@@ -16,15 +15,15 @@ import net.neoforged.neoforge.event.server.ServerStoppingEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class CommonEventHandler {
+public class BMBMCommonEventHandler {
 
     private static final Logger LOGGER = LoggerFactory.getLogger("pixelcaftsbmbannermarker");
-    private final BannerMarkerManager bannerMarkerManager;
-    private final BannerMapIcons bannerMapIcons;
+    private final BMBannerMarkerManager BMBannerMarkerManager;
+    private final BMBannerMapIcons BMBannerMapIcons;
 
-    public CommonEventHandler(BannerMarkerManager bannerMarkerManager, BannerMapIcons bannerMapIcons) {
-        this.bannerMarkerManager = bannerMarkerManager;
-        this.bannerMapIcons = bannerMapIcons;
+    public BMBMCommonEventHandler(BMBannerMarkerManager BMBannerMarkerManager, BMBannerMapIcons BMBannerMapIcons) {
+        this.BMBannerMarkerManager = BMBannerMarkerManager;
+        this.BMBannerMapIcons = BMBannerMapIcons;
     }
 
     @SubscribeEvent
@@ -34,15 +33,15 @@ public class CommonEventHandler {
         BlueMapAPI.onEnable(blueMapAPI -> {
             event.getServer().getAllLevels().forEach(serverLevel -> {
                 LOGGER.info("Loading markers for dimension: {}", serverLevel.dimension().location());
-                bannerMarkerManager.loadMarkers(serverLevel);
+                BMBannerMarkerManager.loadMarkers(serverLevel);
             });
 
-            bannerMapIcons.loadMapIcons(blueMapAPI);
+            BMBannerMapIcons.loadMapIcons(blueMapAPI);
         });
 
         // Registreer de BmCommand
         var dispatcher = event.getServer().getCommands().getDispatcher();
-        new BmCommand(bannerMarkerManager.getConfig(), bannerMarkerManager).register(dispatcher);
+        new BMBMCommand(BMBannerMarkerManager.getConfig(), BMBannerMarkerManager).register(dispatcher);
     }
 
     @SubscribeEvent
@@ -51,7 +50,7 @@ public class CommonEventHandler {
             LOGGER.info("Stopping BmBannerMarker");
             blueMapAPI.getWorlds().forEach(blueMapWorld -> {
                 String dimensionId = blueMapWorld.getId(); // Retrieve the dimension ID
-                bannerMarkerManager.saveMarkers(dimensionId); // Save markers for each dimension
+                BMBannerMarkerManager.saveMarkers(dimensionId); // Save markers for each dimension
             });
         });
     }
@@ -80,9 +79,9 @@ public class CommonEventHandler {
                 String markerType = bannerBlockEntity.getCustomName().getString().substring(1).split(" ")[0];
                 LOGGER.debug("Marker type: {}", markerType);
 
-                if (bannerMarkerManager.getConfig().getMarkerTypes().contains(markerType)) {
+                if (BMBannerMarkerManager.getConfig().getMarkerTypes().contains(markerType)) {
                     LOGGER.trace("Valid marker type. Toggling marker.");
-                    bannerMarkerManager.toggleMarker(blockState, blockEntity);
+                    BMBannerMarkerManager.toggleMarker(blockState, blockEntity);
                 } else {
                     LOGGER.warn("Invalid marker type: {}", markerType);
                 }
@@ -107,7 +106,7 @@ public class CommonEventHandler {
             if (blockEntity instanceof BannerBlockEntity bannerBlockEntity) {
                 if (bannerBlockEntity.getCustomName() != null && bannerBlockEntity.getCustomName().getString().startsWith("#")) {
                     // Remove the marker without validation
-                    bannerMarkerManager.removeMarker(blockEntity.getBlockPos());
+                    BMBannerMarkerManager.removeMarker(blockEntity.getBlockPos());
                 }
             }
         }

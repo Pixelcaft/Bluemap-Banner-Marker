@@ -11,6 +11,6 @@ public class BMBMModEventHandler {
 
     @SubscribeEvent
     public void onCommonSetup(FMLCommonSetupEvent event) {
-        LOGGER.info("BmBannerMarker mod setup complete.");
+        LOGGER.debug("BmBannerMarker mod setup complete.");
     }
 }

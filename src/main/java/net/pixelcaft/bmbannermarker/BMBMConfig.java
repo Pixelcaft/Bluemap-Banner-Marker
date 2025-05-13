@@ -64,8 +64,6 @@ public class BMBMConfig {
                 # Colors will be handled dynamically
                 """);
                 }
-            } else {
-                LOGGER.warn("Configuration file already exists: {}", configFile.getAbsolutePath());
             }
         } catch (IOException e) {
             LOGGER.error("Failed to create configuration file: {}", configFile.getAbsolutePath(), e);

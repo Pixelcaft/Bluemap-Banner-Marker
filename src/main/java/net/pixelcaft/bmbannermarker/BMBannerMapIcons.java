@@ -18,14 +18,13 @@ public class BMBannerMapIcons {
     }
 
     public void loadMapIcons(BlueMapAPI blueMapAPI) {
-        LOGGER.info("Executing loadMapIcons method");
+        LOGGER.debug("Executing loadMapIcons method");
         blueMapAPI.getMaps().forEach(blueMapMap -> {
             var assetStorage = blueMapMap.getAssetStorage();
             for (var markerType : BMBMConfig.getMarkerTypes()) {
                 for (var dyeColor : DyeColor.values()) {
                     File iconFile = BMBMConfig.getIconFile(markerType, dyeColor.getName().toLowerCase());
                     String iconName = iconFile.getName();
-                    LOGGER.info("Loading icon {} for marker type {}", iconName, markerType);
                     try {
                         if (!assetStorage.assetExists(iconName)) {
                             try (var outStream = assetStorage.writeAsset(iconName);
@@ -34,8 +33,6 @@ public class BMBannerMapIcons {
                                          : BMBannerMarker.class.getResourceAsStream("/assets/bmbannermarker/icons/" + dyeColor.getName().toLowerCase() + ".png")) {
                                 if (stream != null) {
                                     outStream.write(stream.readAllBytes());
-                                } else {
-                                    LOGGER.warn("Default icon for color {} not found.", dyeColor.getName().toLowerCase());
                                 }
                             }
                         }

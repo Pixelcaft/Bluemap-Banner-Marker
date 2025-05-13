@@ -32,14 +32,12 @@ public class BMBMCommonEventHandler {
 
         BlueMapAPI.onEnable(blueMapAPI -> {
             event.getServer().getAllLevels().forEach(serverLevel -> {
-                LOGGER.info("Loading markers for dimension: {}", serverLevel.dimension().location());
                 BMBannerMarkerManager.loadMarkers(serverLevel);
             });
 
             BMBannerMapIcons.loadMapIcons(blueMapAPI);
         });
 
-        // Registreer de BmCommand
         var dispatcher = event.getServer().getCommands().getDispatcher();
         new BMBMCommand(BMBannerMarkerManager.getConfig(), BMBannerMarkerManager).register(dispatcher);
     }
@@ -54,6 +52,7 @@ public class BMBMCommonEventHandler {
             });
         });
     }
+
     @SubscribeEvent
     public void onBlockPlace(BlockEvent.EntityPlaceEvent event) {
         if (event.getLevel().isClientSide()) return;
@@ -61,11 +60,8 @@ public class BMBMCommonEventHandler {
         if (!(event.getEntity() instanceof ServerPlayer player)) return;
 
         BlockState blockState = event.getPlacedBlock();
-        LOGGER.debug("Block placed: {}", blockState.getBlock().getDescriptionId());
 
-        // Check if the block is part of the BANNERS tag
         if (!blockState.is(BlockTags.BANNERS)) {
-            LOGGER.debug("Block is not a BannerBlock or WallBannerBlock.");
             return;
         }
 
@@ -73,23 +69,15 @@ public class BMBMCommonEventHandler {
         BlockEntity blockEntity = event.getLevel().getBlockEntity(pos);
 
         if (blockEntity instanceof BannerBlockEntity bannerBlockEntity) {
-            LOGGER.debug("BannerBlockEntity found at position: {}", pos);
-
             if (bannerBlockEntity.getCustomName() != null && bannerBlockEntity.getCustomName().getString().startsWith("#")) {
                 String markerType = bannerBlockEntity.getCustomName().getString().substring(1).split(" ")[0];
-                LOGGER.debug("Marker type: {}", markerType);
 
                 if (BMBannerMarkerManager.getConfig().getMarkerTypes().contains(markerType)) {
-                    LOGGER.trace("Valid marker type. Toggling marker.");
                     BMBannerMarkerManager.toggleMarker(blockState, blockEntity);
                 } else {
                     LOGGER.warn("Invalid marker type: {}", markerType);
                 }
-            } else {
-                LOGGER.debug("Banner does not have a valid custom name.");
             }
-        } else {
-            LOGGER.debug("No BannerBlockEntity found at position: {}", pos);
         }
     }
 

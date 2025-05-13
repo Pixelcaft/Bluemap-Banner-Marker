@@ -48,7 +48,7 @@ public class BMBannerMarkerManager {
         if (!file.exists()) {
             try {
                 if (file.createNewFile()) {
-                    LOGGER.info("Created new file: {}", file.getAbsolutePath());
+                    LOGGER.debug("Created new file: {}", file.getAbsolutePath());
                 }
             } catch (IOException e) {
                 LOGGER.error("Failed to create file: {}", file.getAbsolutePath(), e);
@@ -101,7 +101,7 @@ public class BMBannerMarkerManager {
 
                     try (FileWriter writer = new FileWriter(markerFile)) {
                         MarkerGson.INSTANCE.toJson(markerSet, writer);
-                        LOGGER.info("Saved markers for dimension {} to {}", safeDimensionId, markerFile.getAbsolutePath());
+                        LOGGER.debug("Saved markers for dimension {} to {}", safeDimensionId, markerFile.getAbsolutePath());
                     } catch (IOException e) {
                         LOGGER.error("Failed to save marker file for {}", safeDimensionId, e);
                     }
@@ -149,12 +149,12 @@ public class BMBannerMarkerManager {
                         var existingMarker = existingBannerMarkerSet.getMarkers().get(markerId);
                         if (existingMarker != null) {
                             existingBannerMarkerSet.remove(markerId);
-                            LOGGER.info("Removed existing marker at {}", blockEntity.getBlockPos());
+                            LOGGER.debug("Removed existing marker at {}", blockEntity.getBlockPos());
                         } else if (blockState != null && (blockState.getBlock() instanceof BannerBlock || blockState.getBlock().getClass().getSimpleName().equals("WallBannerBlock"))) {
                             String name = bannerBlockEntity.getCustomName() != null
                                     ? bannerBlockEntity.getCustomName().getString()
                                     : Component.translatable(blockState.getBlock().getDescriptionId()).getString();
-                            LOGGER.info("Adding marker for block: {}", blockState.getBlock().getDescriptionId());
+                            LOGGER.debug("Adding marker for block: {}", blockState.getBlock().getDescriptionId());
                             addMarker(name, bannerBlockEntity, existingBannerMarkerSet, blueMapMap, dimensionId);
                         } else {
                             LOGGER.warn("Block is not a valid BannerBlock or WallBannerBlock: {}", blockState.getBlock().getDescriptionId());
@@ -193,7 +193,7 @@ public class BMBannerMarkerManager {
             return;
         }
 
-        LOGGER.info("Adding marker '{}' with icon '{}' at position ({}, {}, {})", markerLabel, iconAddress, x, y, z);
+        LOGGER.debug("Adding marker '{}' with icon '{}' at position ({}, {}, {})", markerLabel, iconAddress, x, y, z);
 
         POIMarker bannerMarker = POIMarker.builder()
                 .label(markerLabel) // Use the custom markerLabel

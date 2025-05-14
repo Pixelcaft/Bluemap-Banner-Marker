@@ -22,7 +22,6 @@ Run `/bmbm markertypes` to see which types are available.
 - 🗑️ Remove the banner → the marker disappears.
 - 🎨 Uses banner color as the marker color.
 - ⚙️ Custom marker icons supported (16 colors per type).
-- 🧪 Optimized for performance – processes only relevant events.
 
 ---
 

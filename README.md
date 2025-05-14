@@ -57,5 +57,5 @@ By default, the mod uses built-in marker icons.
 To add **custom icons**:
 
 1. Create **16 color variants** (one per dye color) for each marker type.
-2. Place them in: ./bluemap/web/maps/<world>/assets/<type>_<color>.png
-3. For example: ./bluemap/web/maps/world_the_nether/assets/house_red.png
+2. Place them in: `./bluemap/web/maps/<world>/assets/<type>_<color>.png`
+3. For example: `./bluemap/web/maps/world_the_nether/assets/house_red.png`

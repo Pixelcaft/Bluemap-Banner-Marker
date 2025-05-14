@@ -36,8 +36,8 @@ Lists available marker types.
 #### 🛠️ Admin Commands
 Requires OP (level 2+):
 
-- `/bmbm removemarker`  
-  Removes a marker at your current location (if present).
+- `/bmbm removemarker <X> <Y> <Z>`  
+  Removes a marker on the map
 
 - `/bmbm reload`  
   Reloads the mod config and marker types from file.

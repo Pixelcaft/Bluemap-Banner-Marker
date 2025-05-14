@@ -1,0 +1,15 @@
+modLoader = "neoforge"
+loaderVersion = "[4,)" # Pas aan aan de juiste NeoForge loader-versie
+license = "MIT"
+
+[[mods]]
+modId = "pixelcaftsbmbannermarker"
+version = "${file.jarVersion}"
+displayName = "PixelCaft's BM Banner Marker"
+authors = "PixelCaft"
+description = '''
+A server-side mod that adds banner markers to BlueMap.
+Not required on the client.
+'''
+
+displayTest = "IGNORE_SERVER_ONLY"

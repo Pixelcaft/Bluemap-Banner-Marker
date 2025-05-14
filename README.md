@@ -1,35 +1,62 @@
 # 🗺️ PixelCaft's BM Banner Marker
 
-**PixelCaft's BM Banner Marker** is een eenvoudige, server-side Minecraft mod voor NeoForge die automatisch **banner markers toevoegt aan [BlueMap](https://bluemap.bluecolored.de/)** op basis van in-game banners.
+**PixelCaft's BM Banner Marker** is a lightweight, server-side Minecraft mod for NeoForge that automatically adds **banner markers to [BlueMap](https://bluemap.bluecolored.de/)** based on in-game banners.
 
-> ✅ **Client not required** – deze mod draait volledig aan serverzijde.
+> ✅ **Client not required** – this mod runs entirely server-side.
+
+---
+
+## 🧭 How to Use
+
+1. **Rename a banner** in an anvil to `#type`, where `type` is a valid marker type (see below).
+2. **Place the banner** in the world.
+3. A marker will appear automatically on your BlueMap!
+
+Run `/bmbm markertypes` to see which types are available.
 
 ---
 
 ## 🔧 Features
 
-- 📍 Zet een banner in de wereld → het verschijnt automatisch op de BlueMap.
-- 🗑️ Verwijder een banner → marker verdwijnt ook automatisch.
-- 🎨 Ondersteunt bannerkleuren als marker-iconen.
-- 🧪 Performance-vriendelijk: verwerkt alleen relevante events.
+- 📍 Place a banner → it shows up as a marker on BlueMap.
+- 🗑️ Remove the banner → the marker disappears.
+- 🎨 Uses banner color as the marker color.
+- ⚙️ Custom marker icons supported (16 colors per type).
+- 🧪 Optimized for performance – processes only relevant events.
 
 ---
 
 ## 💻 Commands
 
 ### `/bmbm info`
+Shows basic info and help.
+
 ### `/bmbm markertypes`
+Lists available marker types.
 
-- Admin
-### `/bmbm removemarker`
-### `/bmbm reload`
+#### 🛠️ Admin Commands
+Requires OP (level 2+):
 
-## 🧪 Technisch
+- `/bmbm removemarker`  
+  Removes a marker at your current location (if present).
 
-- 🌐 **Server-side only** (`displayTest = IGNORE_SERVER_ONLY`)
-- 📦 NeoForge 1.21.1
+- `/bmbm reload`  
+  Reloads the mod config and marker types from file.
 
 ---
 
+## 🧪 Technical Details
 
+- 🧩 **Server-side only mod** (`displayTest = IGNORE_SERVER_ONLY`)
+- 🛠️ Built for **Minecraft 1.21.1** using **NeoForge**
+- 🔵 Designed to integrate with **BlueMap API**
+- 📐 Default marker icons are **64x64 pixels**
 
+### Custom Marker Icons
+By default, the mod uses built-in marker icons.
+
+To add **custom icons**:
+
+1. Create **16 color variants** (one per dye color) for each marker type.
+2. Place them in: ./bluemap/web/maps/<world>/assets/<type>_<color>.png
+3. For example: ./bluemap/web/maps/world_the_nether/assets/house_red.png
